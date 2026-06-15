@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+{% block title %}Register Laboratory - LabMS{% endblock %}
+{% block auth_content %}
+<div class="min-vh-100 d-flex align-items-center justify-content-center py-5" style="background: linear-gradient(135deg, #1a237e 0%, #0d47a1 100%);">
+  <div class="card p-4 p-md-5" style="width: 100%; max-width: 540px; border-radius: 16px;">
+    <div class="text-center mb-4">
+      <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px; font-size: 1.75rem;">
+        <i class="bi bi-building-add"></i>
+      </div>
+      <h4 class="fw-bold mb-1">Register Your Laboratory</h4>
+      <p class="text-muted small mb-0">Submit your details for admin approval</p>
+    </div>
+
+    {% if form.non_field_errors %}
+    <div class="alert alert-danger py-2">
+      <i class="bi bi-exclamation-triangle me-2"></i>{{ form.non_field_errors.0 }}
+    </div>
+    {% endif %}
+
+    <form method="post" novalidate>
+      {% csrf_token %}
+
+      <div class="mb-3">
+        <label class="form-label fw-semibold small">Laboratory Name</label>
+        <input type="text" id="id_lab_name" name="lab_name" value="{{ form.lab_name.value|default:'' }}"
+               class="form-control {% if form.lab_name.errors %}is-invalid{% endif %}"
+               placeholder="e.g. City Diagnostic Center" required>
+        {% if form.lab_name.errors %}
+        <div class="invalid-feedback">{{ form.lab_name.errors.0 }}</div>
+        {% endif %}
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label fw-semibold small">Username</label>
+        <input type="text" id="id_username" name="username" value="{{ form.username.value|default:'' }}"
+               class="form-control {% if form.username.errors %}is-invalid{% endif %}"
+               placeholder="e.g. citydiagnostics" required>
+        {% if form.username.errors %}
+        <div class="invalid-feedback">{{ form.username.errors.0 }}</div>
+        {% endif %}
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label fw-semibold small">City</label>
+        <input type="text" name="city" value="{{ form.city.value|default:'' }}"
+               class="form-control {% if form.city.errors %}is-invalid{% endif %}"
+               placeholder="e.g. Karachi" required>
+        {% if form.city.errors %}
+        <div class="invalid-feedback">{{ form.city.errors.0 }}</div>
+        {% endif %}
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label fw-semibold small">Address</label>
+        <textarea name="address" rows="3"
+                  class="form-control {% if form.address.errors %}is-invalid{% endif %}"
+                  placeholder="Full street address">{{ form.address.value|default:'' }}</textarea>
+        {% if form.address.errors %}
+        <div class="invalid-feedback">{{ form.address.errors.0 }}</div>
+        {% endif %}
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label fw-semibold small">Phone Number</label>
+        <input type="text" name="phone" value="{{ form.phone.value|default:'' }}"
+               class="form-control {% if form.phone.errors %}is-invalid{% endif %}"
+               placeholder="e.g. +923001234567" required>
+        {% if form.phone.errors %}
+        <div class="invalid-feedback">{{ form.phone.errors.0 }}</div>
+        {% endif %}
+      </div>
+
+      <hr class="my-4">
+
+      <div class="mb-3">
+        <label class="form-label fw-semibold small">Password</label>
+        <input type="password" name="password"
+               class="form-control {% if form.password.errors %}is-invalid{% endif %}"
+               placeholder="Create a password" required>
+        {% if form.password.errors %}
+        <div class="invalid-feedback">{{ form.password.errors.0 }}</div>
+        {% endif %}
+      </div>
+
+      <div class="mb-4">
+        <label class="form-label fw-semibold small">Confirm Password</label>
+        <input type="password" name="confirm_password"
+               class="form-control {% if form.confirm_password.errors %}is-invalid{% endif %}"
+               placeholder="Repeat your password" required>
+        {% if form.confirm_password.errors %}
+        <div class="invalid-feedback">{{ form.confirm_password.errors.0 }}</div>
+        {% endif %}
+      </div>
+
+      <button type="submit" class="btn btn-primary w-100 fw-semibold py-2">
+        <i class="bi bi-send me-2"></i>Submit Registration
+      </button>
+    </form>
+
+    <div class="text-center mt-4 small text-muted">
+      Already have an account? <a href="{% url 'login' %}" class="text-decoration-none">Sign in</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  const labNameInput = document.getElementById('id_lab_name');
+  const usernameInput = document.getElementById('id_username');
+  let userEditedUsername = false;
+
+  usernameInput.addEventListener('input', function() {
+    userEditedUsername = true;
+  });
+
+  labNameInput.addEventListener('input', function() {
+    if (!userEditedUsername) {
+      const slug = this.value
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '');
+      usernameInput.value = slug;
+    }
+  });
+</script>
+{% endblock %}

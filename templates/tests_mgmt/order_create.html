@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Create New Order | LabMS{% endblock %}
+{% block page_title %}Create New Order{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h4 class="fw-bold mb-1">Create New Test Order</h4>
+      <p class="text-muted mb-0">Please ensure all required fields are filled accurately.</p>
+    </div>
+    <a href="{% url 'order_list' %}" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left me-1"></i>Back to Orders
+    </a>
+  </div>
+
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-white border-bottom py-3">
+          <h6 class="fw-semibold mb-0 text-primary">
+            <i class="bi bi-clipboard-plus me-2"></i>Order Details
+          </h6>
+        </div>
+
+        <div class="card-body p-4">
+          <form method="post" novalidate>
+            {% csrf_token %}
+
+            <div class="row g-3">
+
+              <!-- Customer -->
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">
+                  Patient <span class="text-danger">*</span>
+                </label>
+                <select name="customer"
+                  class="form-select {% if form.customer.errors %}is-invalid{% endif %}">
+                  <option value="">-- Select Patient --</option>
+                  {% for value, label in form.customer.field.choices %}
+                    {% if value %}
+                    <option value="{{ value }}"
+                      {% if form.customer.value|stringformat:"s" == value|stringformat:"s" %}selected{% endif %}>
+                      {{ label }}
+                    </option>
+                    {% endif %}
+                  {% endfor %}
+                </select>
+                {% if form.customer.errors %}
+                <div class="invalid-feedback">{{ form.customer.errors.0 }}</div>
+                {% endif %}
+              </div>
+
+              <!-- Laboratory -->
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">
+                  Laboratory <span class="text-danger">*</span>
+                </label>
+                {% if request.user.is_lab_manager %}
+                  <input type="text"
+                    value="{{ form.laboratory.value }}"
+                    class="form-control" readonly>
+                  <input type="hidden" name="laboratory" value="{{ form.laboratory.value }}">
+                {% else %}
+                  <select name="laboratory"
+                    class="form-select {% if form.laboratory.errors %}is-invalid{% endif %}">
+                    <option value="">-- Select Laboratory --</option>
+                    {% for value, label in form.laboratory.field.choices %}
+                      {% if value %}
+                      <option value="{{ value }}"
+                        {% if form.laboratory.value|stringformat:"s" == value|stringformat:"s" %}selected{% endif %}>
+                        {{ label }}
+                      </option>
+                      {% endif %}
+                    {% endfor %}
+                  </select>
+                  {% if form.laboratory.errors %}
+                  <div class="invalid-feedback">{{ form.laboratory.errors.0 }}</div>
+                  {% endif %}
+                {% endif %}
+              </div>
+
+              <!-- Tests -->
+              {% if form.tests %}
+              <div class="col-12">
+                <label class="form-label fw-semibold">
+                  Tests <span class="text-danger">*</span>
+                </label>
+                <div class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                  {% for choice in form.tests %}
+                  <div class="form-check mb-2">
+                    {{ choice.tag }}
+                    <label class="form-check-label" for="{{ choice.id_for_label }}">
+                      {{ choice.choice_label }}
+                    </label>
+                  </div>
+                  {% endfor %}
+                </div>
+                {% if form.tests.errors %}
+                <div class="text-danger small mt-1">{{ form.tests.errors.0 }}</div>
+                {% endif %}
+              </div>
+              {% endif %}
+
+              <!-- Notes -->
+              <div class="col-12">
+                <label class="form-label fw-semibold">Notes</label>
+                <textarea name="notes" rows="4" class="form-control"
+                  placeholder="Add specific instructions or clinical context (optional)">{{ form.notes.value|default:'' }}</textarea>
+              </div>
+
+              <!-- Is Paid -->
+              {% if form.is_paid %}
+              <div class="col-12">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" name="is_paid"
+                    id="isPaidToggle"
+                    {% if form.is_paid.value %}checked{% endif %}>
+                  <label class="form-check-label fw-semibold" for="isPaidToggle">
+                    Is Paid
+                  </label>
+                </div>
+              </div>
+              {% endif %}
+
+            </div>
+
+            <hr class="my-4">
+
+            <!-- Buttons -->
+            <div class="d-flex justify-content-end gap-2">
+              <a href="{% url 'order_list' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-x me-1"></i>Cancel
+              </a>
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-send me-1"></i>Create Order
+              </button>
+            </div>
+
+          </form>
+        </div>
+      </div>
+
+      <!-- Info Cards -->
+      <div class="row g-3 mt-2">
+        <div class="col-md-6">
+          <div class="card border-0 bg-light">
+            <div class="card-body d-flex gap-3 align-items-start">
+              <i class="bi bi-shield-check text-primary fs-4"></i>
+              <div>
+                <p class="fw-semibold mb-1">Data Integrity Check</p>
+                <p class="text-muted small mb-0">
+                  All entries are validated against hospital policy and customer agreements in real-time.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card border-0 bg-light">
+            <div class="card-body d-flex gap-3 align-items-start">
+              <i class="bi bi-lightning text-primary fs-4"></i>
+              <div>
+                <p class="fw-semibold mb-1">Quick Selection</p>
+                <p class="text-muted small mb-0">
+                  Common laboratories and recurring customers are prioritized in the dropdown menus.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

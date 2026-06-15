@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block title %}Users - LabMS{% endblock %}
+{% block page_title %}User Management{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h5 class="fw-bold mb-0">All Users</h5>
+  <a href="{% url 'create_user' %}" class="btn btn-primary btn-sm"><i class="bi bi-plus me-1"></i>Add User</a>
+</div>
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light"><tr>
+        <th>Name</th><th>Username</th><th>Role</th><th>Email</th><th>Phone</th><th>WhatsApp</th><th>Status</th><th>Actions</th>
+      </tr></thead>
+      <tbody>
+        {% for usr in users %}
+        <tr>
+          <td><div class="d-flex align-items-center gap-2">
+            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width:32px;height:32px;font-size:.8rem;">
+              {{ usr.first_name.0|upper }}{{ usr.last_name.0|upper }}
+            </div>
+            {{ usr.get_full_name|default:usr.username }}
+          </div></td>
+          <td><code>{{ usr.username }}</code></td>
+          <td><span class="badge bg-secondary">{{ usr.get_role_display }}</span></td>
+          <td>{{ usr.email|default:"-" }}</td>
+          <td>{{ usr.phone|default:"-" }}</td>
+          <td>{{ usr.whatsapp_number|default:"-" }}</td>
+          <td>
+            <button class="btn btn-sm {% if usr.is_active %}btn-success{% else %}btn-danger{% endif %} toggle-btn"
+                    data-url="{% url 'toggle_user_status' usr.id %}" data-id="{{ usr.id }}">
+              {% if usr.is_active %}Active{% else %}Inactive{% endif %}
+            </button>
+          </td>
+          <td>
+            {% if usr.is_customer %}
+              {% if usr.customer_profile %}
+                <a href="{% url 'customer_detail' usr.customer_profile.pk %}" class="btn btn-sm btn-outline-primary">Profile</a>
+              {% else %}
+                <span class="text-muted small">No profile</span>
+              {% endif %}
+            {% elif usr.is_lab_manager %}
+              {% if usr.laboratory %}
+                <a href="{% url 'lab_detail' usr.laboratory.pk %}" class="btn btn-sm btn-outline-info">View Lab</a>
+              {% else %}
+                <span class="text-muted small">No lab</span>
+              {% endif %}
+            {% else %}
+              <span class="text-muted small">Admin</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="8" class="text-center text-muted py-4">No users found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+document.querySelectorAll('.toggle-btn').forEach(btn=>{
+  btn.addEventListener('click',async()=>{
+    const res = await fetch(btn.dataset.url, {method:'POST', headers:{'X-CSRFToken':'{{ csrf_token }}'}});
+    if(res.ok){const d=await res.json();btn.textContent=d.status==='active'?'Active':'Inactive';btn.className='btn btn-sm '+(d.status==='active'?'btn-success':'btn-danger')+' toggle-btn';}
+  });
+});
+</script>
+{% endblock %}

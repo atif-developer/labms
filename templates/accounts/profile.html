@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% block title %}Profile - LabMS{% endblock %}
+{% block page_title %}My Profile{% endblock %}
+{% block content %}
+<div class="row">
+  <div class="col-md-4">
+    <div class="card p-3 text-center mb-3">
+      {% if user.profile_picture %}
+      <img src="{{ user.profile_picture.url }}" class="rounded-circle mx-auto mb-3" style="width:100px;height:100px;object-fit:cover;">
+      {% else %}
+      <div class="rounded-circle bg-primary text-white mx-auto mb-3 d-flex align-items-center justify-content-center" style="width:100px;height:100px;font-size:2.5rem;">
+        {{ user.first_name.0|upper }}{{ user.last_name.0|upper }}
+      </div>
+      {% endif %}
+      <h5 class="fw-bold">{{ user.get_full_name }}</h5>
+      <span class="badge bg-primary">{{ user.get_role_display }}</span>
+      <hr>
+      <div class="text-start small">
+        <div class="mb-1"><i class="bi bi-envelope me-2 text-muted"></i>{{ user.email|default:"Not set" }}</div>
+        <div class="mb-1"><i class="bi bi-phone me-2 text-muted"></i>{{ user.phone|default:"Not set" }}</div>
+        <div class="mb-1"><i class="bi bi-whatsapp me-2 text-success"></i>{{ user.whatsapp_number|default:"Not set" }}</div>
+        <div><i class="bi bi-calendar me-2 text-muted"></i>Joined {{ user.date_joined|date:"d M Y" }}</div>
+      </div>
+    </div>
+    {% if user.is_customer %}
+    {% if user.customer_profile %}
+    <div class="card p-3">
+      <h6 class="fw-bold"><i class="bi bi-person-badge me-2"></i>Patient Details</h6>
+      <div class="small">
+        <div><strong>Patient ID:</strong> {{ user.customer_profile.patient_id }}</div>
+        <div><strong>Blood Group:</strong> {{ user.customer_profile.blood_group|default:"N/A" }}</div>
+      </div>
+    </div>
+    {% endif %}
+    {% endif %}
+  </div>
+  <div class="col-md-8">
+    <div class="card p-4">
+      <h5 class="fw-bold mb-3"><i class="bi bi-pencil me-2"></i>Edit Profile</h5>
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {% crispy form %}
+        <button class="btn btn-primary mt-2" type="submit"><i class="bi bi-check-lg me-1"></i>Save Changes</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

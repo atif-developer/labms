@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% block title %}My Laboratory - LabMS{% endblock %}
+{% block page_title %}My Laboratory{% endblock %}
+{% block content %}
+<div class="row g-3">
+  <div class="col-md-4">
+    <div class="card p-3 text-center">
+      {% if lab.logo %}<img src="{{ lab.logo.url }}" class="rounded mb-2" style="max-width:100px;">{% endif %}
+      <h5 class="fw-bold">{{ lab.name }}</h5>
+      <span class="badge {% if lab.status == 'approved' %}bg-success{% elif lab.status == 'pending' %}bg-warning text-dark{% else %}bg-danger{% endif %}">{{ lab.get_status_display }}</span>
+      {% if lab.status == 'rejected' and lab.rejection_reason %}
+      <div class="alert alert-danger mt-3 text-start small"><strong>Rejection:</strong> {{ lab.rejection_reason }}</div>
+      {% endif %}
+      {% if lab.status == 'pending' %}
+      <div class="alert alert-info mt-3 text-start small"><i class="bi bi-clock me-1"></i>Your registration is under review. You'll be notified once approved.</div>
+      {% endif %}
+    </div>
+  </div>
+  <div class="col-md-8">
+    <div class="card p-4">
+      <h5 class="fw-bold mb-3">Update Lab Information</h5>
+      <form method="post" enctype="multipart/form-data">{% csrf_token %}{% crispy form %}
+        <button class="btn btn-primary mt-2">Save Changes</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% block title %}Order {{ order.order_number }} - LabMS{% endblock %}
+{% block page_title %}Order Detail{% endblock %}
+{% block content %}
+<div class="mb-3 d-flex gap-2 flex-wrap">
+  <a href="{% url 'order_list' %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Back</a>
+  {% if user.is_admin or user.is_lab_manager %}
+  <a href="{% url 'customer_detail' order.customer.pk %}" class="btn btn-sm btn-outline-info">Patient Profile</a>
+  {% endif %}
+</div>
+
+<div class="row g-3">
+  <div class="col-md-4">
+    <div class="card p-3 mb-3">
+      <h6 class="fw-bold mb-3"><i class="bi bi-info-circle me-2"></i>Order Info</h6>
+      <div class="small">
+        <div class="mb-2"><span class="text-muted">Order #</span><div><code class="fs-6">{{ order.order_number }}</code></div></div>
+        <div class="mb-2"><span class="text-muted">Status</span>
+          <div><span class="badge {% if order.status == 'completed' %}bg-success{% elif order.status == 'pending' %}bg-warning text-dark{% elif order.status == 'processing' %}bg-info text-dark{% elif order.status == 'cancelled' %}bg-danger{% else %}bg-secondary{% endif %}">{{ order.get_status_display }}</span></div>
+        </div>
+        <div class="mb-2"><span class="text-muted">Laboratory</span><div class="fw-bold">{{ order.laboratory.name }}</div></div>
+        <div class="mb-2"><span class="text-muted">Total</span><div class="fw-bold fs-5">PKR {{ order.total_amount }}</div></div>
+        <div class="mb-2"><span class="text-muted">Payment</span><div>{% if order.is_paid %}<span class="badge bg-success">Paid</span>{% else %}<span class="badge bg-warning text-dark">Pending</span>{% endif %}</div></div>
+        <div><span class="text-muted">Date</span><div>{{ order.created_at|date:"d M Y H:i" }}</div></div>
+      </div>
+    </div>
+
+    {% if not user.is_customer %}
+    <div class="card p-3 mb-3">
+      <h6 class="fw-bold mb-3"><i class="bi bi-person me-2"></i>Patient</h6>
+      <div class="small">
+        <div class="fw-bold">{{ order.customer.user.get_full_name }}</div>
+        <div class="text-muted">{{ order.customer.patient_id }}</div>
+        <div><i class="bi bi-phone me-1 text-muted"></i>{{ order.customer.user.phone|default:"N/A" }}</div>
+        <div><i class="bi bi-whatsapp me-1 text-success"></i>{{ order.customer.user.whatsapp_number|default:"Not set" }}</div>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if user.is_admin or user.is_lab_manager %}
+    {% if order.status != 'cancelled' and order.status != 'completed' %}
+    <div class="card p-3">
+      <h6 class="fw-bold mb-3"><i class="bi bi-arrow-repeat me-2"></i>Update Status</h6>
+      <form method="post" action="{% url 'order_update_status' order.pk %}">
+        {% csrf_token %}
+        <select name="status" class="form-select form-select-sm mb-2">
+          <option value="pending" {% if order.status == 'pending' %}selected{% endif %}>Pending</option>
+          <option value="sample_collected" {% if order.status == 'sample_collected' %}selected{% endif %}>Sample Collected</option>
+          <option value="processing" {% if order.status == 'processing' %}selected{% endif %}>Processing</option>
+          <option value="cancelled" {% if order.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+        </select>
+        <button class="btn btn-sm btn-primary w-100">Update</button>
+      </form>
+    </div>
+    {% endif %}
+    {% endif %}
+  </div>
+
+  <div class="col-md-8">
+    <div class="card p-3">
+      <h6 class="fw-bold mb-3"><i class="bi bi-flask me-2"></i>Tests in this Order</h6>
+      {% if order.whatsapp_notified %}
+      <div class="alert alert-success py-2 small"><i class="bi bi-whatsapp me-2"></i>Customer has been notified via WhatsApp about results.</div>
+      {% endif %}
+      <div class="list-group list-group-flush">
+        {% for ot in order_tests %}
+        <div class="list-group-item px-0">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <div class="fw-semibold">{{ ot.test.name }}</div>
+              <div class="small text-muted">{{ ot.test.code }}</div>
+            </div>
+            <div class="text-end">
+              <div class="fw-bold">PKR {{ ot.price }}</div>
+              {% if ot.result_file %}
+              <span class="badge bg-success"><i class="bi bi-check me-1"></i>Result Ready</span>
+              {% else %}
+              <span class="badge bg-secondary">Pending</span>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="mt-2 d-flex gap-2">
+            {% if user.is_admin or user.is_lab_manager %}
+            <a href="{% url 'upload_result' order.pk ot.pk %}" class="btn btn-sm {% if ot.result_file %}btn-outline-warning{% else %}btn-outline-primary{% endif %}">
+              <i class="bi bi-upload me-1"></i>{% if ot.result_file %}Update{% else %}Upload{% endif %} Result
+            </a>
+            {% endif %}
+            {% if ot.result_file %}
+            <a href="{% url 'download_result' order.pk ot.pk %}" class="btn btn-sm btn-outline-success">
+              <i class="bi bi-download me-1"></i>Download
+            </a>
+            {% endif %}
+          </div>
+        </div>
+        {% empty %}
+        <div class="text-muted text-center py-3">No tests in this order.</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    {% if order.notes %}
+    <div class="card p-3 mt-3">
+      <h6 class="fw-bold"><i class="bi bi-chat-text me-2"></i>Notes</h6>
+      <p class="small text-muted mb-0">{{ order.notes }}</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

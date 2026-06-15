@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block title %}{{ customer.user.get_full_name }} - LabMS{% endblock %}
+{% block page_title %}Patient Profile{% endblock %}
+{% block content %}
+<div class="mb-3">
+  <a href="{% url 'customer_list' %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Back</a>
+  <a href="{% url 'customer_edit' customer.pk %}" class="btn btn-sm btn-outline-primary ms-2"><i class="bi bi-pencil me-1"></i>Edit</a>
+  <a href="{% url 'order_create' %}" class="btn btn-sm btn-primary ms-2"><i class="bi bi-plus me-1"></i>New Order</a>
+</div>
+<div class="row g-3">
+  <div class="col-md-4">
+    <div class="card p-3 text-center">
+      <div class="rounded-circle bg-primary text-white mx-auto mb-3 d-flex align-items-center justify-content-center" style="width:80px;height:80px;font-size:2rem;">
+        {{ customer.user.first_name.0|upper }}{{ customer.user.last_name.0|upper }}
+      </div>
+      <h5 class="fw-bold mb-0">{{ customer.user.get_full_name }}</h5>
+      <code class="d-block mb-2">{{ customer.patient_id }}</code>
+      {% if customer.blood_group %}<span class="badge bg-danger mb-2">{{ customer.blood_group }}</span>{% endif %}
+      <hr>
+      <div class="text-start small">
+        <div class="mb-1"><i class="bi bi-envelope me-2 text-muted"></i>{{ customer.user.email|default:"N/A" }}</div>
+        <div class="mb-1"><i class="bi bi-phone me-2 text-muted"></i>{{ customer.user.phone|default:"N/A" }}</div>
+        <div class="mb-1"><i class="bi bi-whatsapp me-2 text-success"></i>{{ customer.user.whatsapp_number|default:"Not set" }}</div>
+        {% if customer.user.gender %}<div class="mb-1"><i class="bi bi-gender-ambiguous me-2 text-muted"></i>{{ customer.user.get_gender_display }}</div>{% endif %}
+        {% if customer.user.date_of_birth %}<div><i class="bi bi-calendar me-2 text-muted"></i>{{ customer.user.date_of_birth }}</div>{% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="col-md-8">
+    <div class="card p-3">
+      <h6 class="fw-bold mb-3"><i class="bi bi-clipboard-pulse me-2"></i>Test Orders ({{ orders.count }})</h6>
+      <div class="table-responsive">
+        <table class="table table-sm table-hover align-middle mb-0">
+          <thead class="table-light"><tr><th>Order #</th><th>Lab</th><th>Status</th><th>Amount</th><th>Date</th><th></th></tr></thead>
+          <tbody>
+            {% for order in orders %}
+            <tr>
+              <td><code>{{ order.order_number }}</code></td>
+              <td>{{ order.laboratory.name }}</td>
+              <td>
+                <span class="badge {% if order.status == 'completed' %}bg-success{% elif order.status == 'pending' %}bg-warning text-dark{% elif order.status == 'processing' %}bg-info text-dark{% else %}bg-secondary{% endif %}">
+                  {{ order.get_status_display }}
+                </span>
+              </td>
+              <td>PKR {{ order.total_amount }}</td>
+              <td><small>{{ order.created_at|date:"d M Y" }}</small></td>
+              <td><a href="{% url 'order_detail' order.pk %}" class="btn btn-sm btn-outline-primary">View</a></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" class="text-center text-muted">No orders yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

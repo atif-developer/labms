@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% block title %}Add Test - LabMS{% endblock %}
+{% block page_title %}{{ page_title }}{% endblock %}
+{% block content %}
+<div class="card p-4" style="max-width: 640px;">
+  <h5 class="fw-bold mb-4">Add New Test</h5>
+
+  <form method="post" novalidate>
+    {% csrf_token %}
+
+    <div class="mb-3">
+      <label class="form-label fw-semibold small">Test Name</label>
+      <input type="text" name="name" value="{{ form.name.value|default:'' }}"
+             class="form-control {% if form.name.errors %}is-invalid{% endif %}"
+             placeholder="e.g. Complete Blood Count" required>
+      {% if form.name.errors %}
+      <div class="invalid-feedback">{{ form.name.errors.0 }}</div>
+      {% endif %}
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label fw-semibold small">Category</label>
+      <select name="category" class="form-select {% if form.category.errors %}is-invalid{% endif %}">
+        <option value="">-- Select Category --</option>
+        {% for value, label in form.fields.category.choices %}
+          {% if value %}
+          <option value="{{ value }}" {% if form.category.value|stringformat:"s" == value|stringformat:"s" %}selected{% endif %}>{{ label }}</option>
+          {% endif %}
+        {% endfor %}
+      </select>
+      {% if form.category.errors %}
+      <div class="invalid-feedback">{{ form.category.errors.0 }}</div>
+      {% endif %}
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label fw-semibold small">Laboratory</label>
+      {% if request.user.is_lab_manager %}
+        <div class="form-control bg-light text-muted">
+          {% for value, label in form.fields.laboratory.choices %}{% if value %}{{ label }}{% endif %}{% endfor %}
+        </div>
+        <input type="hidden" name="laboratory" value="{{ form.laboratory.value }}">
+      {% else %}
+        <select name="laboratory" class="form-select {% if form.laboratory.errors %}is-invalid{% endif %}">
+          <option value="">-- Select Laboratory --</option>
+          {% for value, label in form.fields.laboratory.choices %}
+            {% if value %}
+            <option value="{{ value }}" {% if form.laboratory.value|stringformat:"s" == value|stringformat:"s" %}selected{% endif %}>{{ label }}</option>
+            {% endif %}
+          {% endfor %}
+        </select>
+        {% if form.laboratory.errors %}
+        <div class="invalid-feedback">{{ form.laboratory.errors.0 }}</div>
+        {% endif %}
+      {% endif %}
+    </div>
+
+    <div class="mb-4">
+      <label class="form-label fw-semibold small">Price (PKR)</label>
+      <input type="number" name="price" value="{{ form.price.value|default:'' }}"
+             class="form-control {% if form.price.errors %}is-invalid{% endif %}"
+             placeholder="e.g. 500" min="1" step="0.01" required>
+      {% if form.price.errors %}
+      <div class="invalid-feedback">{{ form.price.errors.0 }}</div>
+      {% endif %}
+    </div>
+
+    <div class="d-flex gap-2">
+      <button type="submit" class="btn btn-primary">
+        <i class="bi bi-check-lg me-1"></i>Save Test
+      </button>
+      <a href="{% url 'test_list' %}" class="btn btn-outline-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

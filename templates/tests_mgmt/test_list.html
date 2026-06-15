@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% block title %}Tests - LabMS{% endblock %}
+{% block page_title %}Tests{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h5 class="fw-bold mb-0">Lab Tests</h5>
+  {% if user.is_admin or user.is_lab_manager %}
+  <a href="{% url 'test_create' %}" class="btn btn-primary btn-sm"><i class="bi bi-plus me-1"></i>Add Test</a>
+  {% endif %}
+</div>
+
+<!-- Filters -->
+<div class="card mb-3">
+  <div class="card-body py-2">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-sm-5 col-md-4">
+        <label class="form-label small fw-semibold mb-1">Search</label>
+        <input type="text" name="search" value="{{ filters.search }}"
+          class="form-control form-control-sm" placeholder="Test name...">
+      </div>
+      <div class="col-sm-4 col-md-3">
+        <label class="form-label small fw-semibold mb-1">Category</label>
+        <select name="category" class="form-select form-select-sm">
+          <option value="">All Categories</option>
+          {% for cat in categories %}
+          <option value="{{ cat.pk }}" {% if filters.category == cat.pk|stringformat:"s" %}selected{% endif %}>
+            {{ cat.name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-auto d-flex gap-2">
+        <button type="submit" class="btn btn-primary btn-sm">
+          <i class="bi bi-search me-1"></i>Search
+        </button>
+        {% if filters.search or filters.category %}
+        <a href="{% url 'test_list' %}" class="btn btn-outline-secondary btn-sm">
+          <i class="bi bi-x me-1"></i>Clear
+        </a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Results count -->
+<p class="text-muted small mb-2">{{ tests|length }} test{{ tests|length|pluralize }} found</p>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light"><tr><th>Code</th><th>Name</th><th>Category</th><th>Price</th><th>Laboratory</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+        {% for test in tests %}
+        <tr>
+          <td><code>{{ test.code }}</code></td>
+          <td class="fw-semibold">{{ test.name }}</td>
+          <td>{{ test.category.name }}</td>
+          <td>PKR {{ test.price }}</td>
+          <td>{{ test.laboratory.name|default:"All" }}</td>
+          <td><span class="badge {% if test.is_active %}bg-success{% else %}bg-secondary{% endif %}">{% if test.is_active %}Active{% else %}Inactive{% endif %}</span></td>
+          <td><a href="{% url 'test_edit' test.pk %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="text-center text-muted py-4">No tests found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
