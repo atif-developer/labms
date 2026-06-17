@@ -8,102 +8,224 @@
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
 <style>
-  :root { --primary: #0d6efd; --sidebar-width: 260px; }
+  :root { --primary: #0d6efd; }
   body { background: #f4f6f9; font-family: 'Segoe UI', sans-serif; }
-  .sidebar { position: fixed; top: 0; left: 0; width: var(--sidebar-width); height: 100vh; background: linear-gradient(180deg,#1a237e 0%,#0d47a1 100%); color: #fff; overflow-y: auto; z-index: 1000; transition: .3s; }
-  .sidebar-brand { padding: 1.5rem 1rem; border-bottom: 1px solid rgba(255,255,255,.1); }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    position: fixed; top: 0; left: 0; width: 260px; height: 100vh;
+    background: linear-gradient(180deg,#1a237e 0%,#0d47a1 100%);
+    color: #fff; overflow-y: auto; overflow-x: hidden;
+    z-index: 1050; transition: all 0.3s ease;
+  }
+  .sidebar.collapsed { width: 70px; }
+  .sidebar.collapsed .nav-text { display: none; }
+  .sidebar.collapsed .brand-text { display: none; }
+  .sidebar.collapsed .sidebar-section { display: none; }
+  .sidebar.collapsed .nav-link { justify-content: center; padding: 12px 8px; }
+  .sidebar.collapsed .nav-link:hover::after {
+    content: attr(data-tooltip);
+    position: absolute; left: 75px;
+    background: #333; color: #fff;
+    padding: 4px 10px; border-radius: 6px;
+    font-size: 12px; white-space: nowrap; z-index: 9999;
+  }
+
+  /* ── Sidebar brand ── */
+  .sidebar-brand { padding: 1.2rem 1rem; border-bottom: 1px solid rgba(255,255,255,.1); }
   .sidebar-brand h5 { margin: 0; font-weight: 700; font-size: 1.1rem; }
-  .sidebar-nav .nav-link { color: rgba(255,255,255,.8); padding: .6rem 1rem; border-radius: 8px; margin: 2px 8px; transition: .2s; display:block; text-decoration:none; }
+
+  /* ── Nav links ── */
+  .sidebar-nav .nav-link {
+    color: rgba(255,255,255,.8); padding: .6rem 1rem; border-radius: 8px;
+    margin: 2px 8px; transition: .2s;
+    display: flex; align-items: center; text-decoration: none; position: relative;
+  }
   .sidebar-nav .nav-link:hover, .sidebar-nav .nav-link.active { background: rgba(255,255,255,.15); color: #fff; }
-  .sidebar-nav .nav-link i { width: 20px; }
+  .sidebar-nav .nav-link i { flex-shrink: 0; width: 20px; }
   .sidebar-section { font-size: .7rem; text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,.4); padding: .5rem 1rem; margin-top: .5rem; }
-  .main-content { margin-left: var(--sidebar-width); min-height: 100vh; }
+
+  /* ── Sidebar toggle button ── */
+  #sidebarToggle {
+    background: none; border: none; cursor: pointer;
+    padding: 8px 12px; border-radius: 8px;
+    color: rgba(255,255,255,.8); width: 100%; text-align: right; display: block;
+  }
+  #sidebarToggle:hover { background: rgba(255,255,255,.1); color: #fff; }
+
+  /* ── Main content ── */
+  .main-content { margin-left: 260px; min-height: 100vh; transition: all 0.3s ease; }
+  .main-content.expanded { margin-left: 70px; }
+
+  /* ── Topbar ── */
   .topbar { background: #fff; padding: .75rem 1.5rem; border-bottom: 1px solid #dee2e6; position: sticky; top: 0; z-index: 100; }
+
+  /* ── Mobile toggle button ── */
+  .mobile-toggle {
+    display: flex; align-items: center; justify-content: center;
+    background: none; border: none; cursor: pointer;
+    padding: 6px 10px; border-radius: 8px; color: inherit;
+  }
+  .mobile-toggle:hover { background: rgba(0,0,0,.05); }
+  @media (min-width: 992px) { .mobile-toggle { display: none !important; } }
+
+  /* ── Mobile overlay ── */
+  .sidebar-overlay {
+    display: none; position: fixed; top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(0,0,0,.5); z-index: 1040;
+  }
+  .sidebar-overlay.active { display: block !important; }
+
+  /* ── Page content & cards ── */
   .page-content { padding: 1.5rem; }
   .card { border: none; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,.06); }
   .stat-card { border-radius: 12px; padding: 1.25rem; color: #fff; }
   .stat-card .icon { font-size: 2.5rem; opacity: .7; }
-  @media(max-width:768px){.main-content{margin-left:0}}
+
+  /* ── Mobile responsive ── */
+  @media (max-width: 991px) {
+    .sidebar {
+      left: -260px !important; width: 260px !important;
+      position: fixed !important; top: 0 !important; height: 100vh !important;
+    }
+    .sidebar.mobile-open {
+      left: 0 !important;
+      box-shadow: 4px 0 15px rgba(0,0,0,.3) !important;
+    }
+    /* collapsed + mobile-open: still show the sidebar */
+    .sidebar.collapsed { left: -260px !important; width: 260px !important; }
+    .sidebar.collapsed.mobile-open { left: 0 !important; }
+    .main-content { margin-left: 0 !important; }
+    .sidebar.mobile-open .nav-text { display: inline !important; }
+    .sidebar.mobile-open .brand-text { display: inline !important; }
+    .sidebar.mobile-open .sidebar-section { display: block !important; }
+    .sidebar.mobile-open .nav-link { justify-content: flex-start !important; padding: 10px 16px !important; }
+  }
 </style>
 {% block extra_css %}{% endblock %}
 </head>
 <body>
 {% if user.is_authenticated %}
-<div class="sidebar" id="sidebar">
+
+<!-- Sidebar -->
+<div id="sidebar" class="sidebar">
+
+  <!-- Collapse toggle -->
+  <button id="sidebarToggle" onclick="toggleSidebar()" title="Toggle sidebar">
+    <i class="bi bi-list fs-5"></i>
+  </button>
+
+  <!-- Brand -->
   <div class="sidebar-brand d-flex align-items-center gap-2">
-    <i class="bi bi-droplet-fill fs-4"></i>
-    <div><h5>LabMS</h5><small class="opacity-50" style="font-size:.7rem">Laboratory System</small></div>
+    <i class="bi bi-droplet-fill fs-4 flex-shrink-0"></i>
+    <div class="brand-text">
+      <h5 class="mb-0">LabMS</h5>
+      <small class="opacity-50" style="font-size:.7rem">Laboratory System</small>
+    </div>
   </div>
+
+  <!-- Nav -->
   <nav class="sidebar-nav py-2">
-    <a href="{% url 'dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
-      <i class="bi bi-grid-1x2-fill me-2"></i>Dashboard
+
+    <a href="{% url 'dashboard' %}"
+       class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
+       data-tooltip="Dashboard">
+      <i class="bi bi-grid-1x2-fill"></i>
+      <span class="nav-text ms-2">Dashboard</span>
     </a>
 
     {% if user.is_admin or user.is_lab_manager %}
     <div class="sidebar-section">Laboratory</div>
     {% if user.is_admin %}
-    <a href="{% url 'lab_list' %}" class="nav-link">
-      <i class="bi bi-building me-2"></i>Laboratories
+    <a href="{% url 'lab_list' %}" class="nav-link" data-tooltip="Laboratories">
+      <i class="bi bi-building"></i>
+      <span class="nav-text ms-2">Laboratories</span>
     </a>
     {% endif %}
     {% if user.is_lab_manager %}
-    <a href="{% url 'my_lab' %}" class="nav-link">
-      <i class="bi bi-building me-2"></i>My Laboratory
+    <a href="{% url 'my_lab' %}" class="nav-link" data-tooltip="My Laboratory">
+      <i class="bi bi-building"></i>
+      <span class="nav-text ms-2">My Laboratory</span>
     </a>
     {% endif %}
 
     <div class="sidebar-section">Catalog</div>
-    <a href="{% url 'category_list' %}" class="nav-link">
-      <i class="bi bi-tag me-2"></i>Categories
+    <a href="{% url 'category_list' %}" class="nav-link" data-tooltip="Categories">
+      <i class="bi bi-tag"></i>
+      <span class="nav-text ms-2">Categories</span>
     </a>
-    <a href="{% url 'test_list' %}" class="nav-link">
-      <i class="bi bi-flask me-2"></i>Tests
+    <a href="{% url 'test_list' %}" class="nav-link" data-tooltip="Tests">
+      <i class="bi bi-flask"></i>
+      <span class="nav-text ms-2">Tests</span>
     </a>
 
     <div class="sidebar-section">Patients</div>
-    <a href="{% url 'customer_list' %}" class="nav-link">
-      <i class="bi bi-people me-2"></i>Customers
+    <a href="{% url 'customer_list' %}" class="nav-link" data-tooltip="Customers">
+      <i class="bi bi-people"></i>
+      <span class="nav-text ms-2">Customers</span>
     </a>
     {% endif %}
 
     <div class="sidebar-section">Orders</div>
-    <a href="{% url 'order_list' %}" class="nav-link">
-      <i class="bi bi-clipboard-pulse me-2"></i>Test Orders
+    <a href="{% url 'order_list' %}" class="nav-link" data-tooltip="Test Orders">
+      <i class="bi bi-clipboard-pulse"></i>
+      <span class="nav-text ms-2">Test Orders</span>
     </a>
     {% if user.is_admin or user.is_lab_manager %}
-    <a href="{% url 'order_create' %}" class="nav-link">
-      <i class="bi bi-plus-circle me-2"></i>New Order
+    <a href="{% url 'order_create' %}" class="nav-link" data-tooltip="New Order">
+      <i class="bi bi-plus-circle"></i>
+      <span class="nav-text ms-2">New Order</span>
     </a>
     {% endif %}
 
     {% if user.is_admin %}
     <div class="sidebar-section">Admin</div>
-    <a href="{% url 'user_list' %}" class="nav-link">
-      <i class="bi bi-person-gear me-2"></i>Users
+    <a href="{% url 'user_list' %}" class="nav-link" data-tooltip="Users">
+      <i class="bi bi-person-gear"></i>
+      <span class="nav-text ms-2">Users</span>
     </a>
-    <a href="{% url 'notification_log' %}" class="nav-link">
-      <i class="bi bi-bell me-2"></i>Notifications
+    <a href="{% url 'notification_log' %}" class="nav-link" data-tooltip="Notifications">
+      <i class="bi bi-bell"></i>
+      <span class="nav-text ms-2">Notifications</span>
     </a>
     {% endif %}
 
     <div class="sidebar-section mt-3">Account</div>
-    <a href="{% url 'profile' %}" class="nav-link">
-      <i class="bi bi-person-circle me-2"></i>Profile
+    <a href="{% url 'profile' %}" class="nav-link" data-tooltip="Profile">
+      <i class="bi bi-person-circle"></i>
+      <span class="nav-text ms-2">Profile</span>
     </a>
-    <a href="{% url 'logout' %}" class="nav-link" style="color:#f8a5a5">
-      <i class="bi bi-box-arrow-right me-2"></i>Logout
+    <a href="{% url 'logout' %}" class="nav-link" style="color:#f8a5a5" data-tooltip="Logout">
+      <i class="bi bi-box-arrow-right"></i>
+      <span class="nav-text ms-2">Logout</span>
     </a>
+
   </nav>
 </div>
 
-<div class="main-content">
+<!-- Mobile overlay -->
+<div id="sidebarOverlay" class="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<!-- Main content -->
+<div id="mainContent" class="main-content">
+
+  <!-- Topbar -->
   <div class="topbar d-flex align-items-center justify-content-between">
-    <h6 class="mb-0 fw-semibold text-muted">{% block page_title %}{% endblock %}</h6>
-    <div class="ms-auto d-flex align-items-center gap-3">
+    <div class="d-flex align-items-center gap-2">
+      <!-- Mobile hamburger -->
+      <button class="mobile-toggle" onclick="openSidebar()">
+        <i class="bi bi-list fs-4"></i>
+      </button>
+      <h6 class="mb-0 fw-semibold text-muted">{% block page_title %}{% endblock %}</h6>
+    </div>
+    <div class="d-flex align-items-center gap-3">
       <span class="badge bg-primary">{{ user.get_role_display }}</span>
       <strong>{{ user.get_full_name|default:user.username }}</strong>
     </div>
   </div>
+
+  <!-- Page content -->
   <div class="page-content">
     {% for message in messages %}
     <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags|default:'info' }}{% endif %} alert-dismissible fade show">
@@ -114,12 +236,65 @@
     {% endfor %}
     {% block content %}{% endblock %}
   </div>
+
 </div>
+
 {% else %}
 {% block auth_content %}{% endblock %}
 {% endif %}
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 {% block extra_js %}{% endblock %}
+
+<script>
+  // Restore saved state on page load
+  const sidebar = document.getElementById('sidebar');
+  const mainContent = document.getElementById('mainContent');
+  if (sidebar && localStorage.getItem('sidebarCollapsed') === 'true') {
+    sidebar.classList.add('collapsed');
+    mainContent.classList.add('expanded');
+  }
+
+  function toggleSidebar() {
+    sidebar.classList.toggle('collapsed');
+    mainContent.classList.toggle('expanded');
+    localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+  }
+
+  function openSidebar() {
+    const sb = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    if (!sb || !overlay) { console.error('Sidebar or overlay not found'); return; }
+    sb.classList.add('mobile-open');
+    overlay.classList.add('active');
+    overlay.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeSidebar() {
+    const sb = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    if (!sb || !overlay) return;
+    sb.classList.remove('mobile-open');
+    overlay.classList.remove('active');
+    overlay.style.display = 'none';
+    document.body.style.overflow = '';
+  }
+
+  // Close on mobile nav click
+  document.querySelectorAll('.sidebar .nav-link').forEach(link => {
+    link.addEventListener('click', function() {
+      if (window.innerWidth < 992) closeSidebar();
+    });
+  });
+
+  // Close overlay on resize to desktop
+  window.addEventListener('resize', function() {
+    if (window.innerWidth >= 992) {
+      closeSidebar();
+      document.body.style.overflow = '';
+    }
+  });
+</script>
 </body>
 </html>
