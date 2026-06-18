@@ -133,16 +133,29 @@ class TestOrderForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
-        if user and user.role == User.ROLE_LAB_MANAGER:
+
+        if user and user.is_lab_manager:
             try:
                 lab = user.laboratory
-                self.fields['laboratory'].queryset = Laboratory.objects.filter(id=lab.id)
+                self.fields['customer'].queryset = Customer.objects.filter(
+                    laboratory=lab
+                ).select_related('user')
+                self.fields['laboratory'].queryset = Laboratory.objects.filter(pk=lab.pk)
                 self.fields['laboratory'].initial = lab
                 self.fields['tests'].queryset = Test.objects.filter(laboratory=lab, is_active=True)
             except Exception:
-                pass
+                self.fields['customer'].queryset = Customer.objects.none()
+                self.fields['laboratory'].queryset = Laboratory.objects.none()
+                self.fields['tests'].queryset = Test.objects.none()
         else:
+            self.fields['customer'].queryset = Customer.objects.select_related('user').all()
+            self.fields['laboratory'].queryset = Laboratory.objects.filter(status='approved')
             self.fields['tests'].queryset = Test.objects.filter(is_active=True)
+
+        self.fields['customer'].label_from_instance = lambda obj: \
+            f"{obj.user.get_full_name()} — {obj.patient_id}"
+        self.fields['tests'].label_from_instance = lambda obj: \
+            f"{obj.name} — Rs. {obj.price}"
 
 
 class UploadResultForm(forms.ModelForm):

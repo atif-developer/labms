@@ -318,33 +318,35 @@ def order_create(request):
     if not (request.user.is_admin or request.user.is_lab_manager):
         messages.error(request, 'Access denied.')
         return redirect('dashboard')
-    form = TestOrderForm(request.POST or None, user=request.user)
-    if request.method == 'POST' and form.is_valid():
-        order = form.save(commit=False)
-        order.ordered_by = request.user
-        order.save()
-        # Create OrderTest entries
-        total = 0
-        for test in form.cleaned_data['tests']:
-            ot = OrderTest.objects.create(order=order, test=test, price=test.price)
-            total += test.price
-        order.total_amount = total
-        order.save(update_fields=['total_amount'])
-        messages.success(request, f'Order {order.order_number} created.')
-        return redirect('order_detail', pk=order.pk)
-    tests_qs = form.fields['tests'].queryset.select_related('category').order_by('category__name', 'name')
-    lab = None
-    if request.user.is_lab_manager:
-        try:
-            lab = request.user.laboratory
-        except Exception:
-            pass
-    selected_tests = form.data.getlist('tests') if request.method == 'POST' else []
+
+    if request.method == 'POST':
+        form = TestOrderForm(request.POST, user=request.user)
+        if form.is_valid():
+            order = form.save(commit=False)
+            if request.user.is_lab_manager:
+                try:
+                    order.laboratory = request.user.laboratory
+                except Exception:
+                    messages.error(request, 'No laboratory found.')
+                    return redirect('dashboard')
+            order.ordered_by = request.user
+            order.save()
+            total = 0
+            for test in form.cleaned_data['tests']:
+                OrderTest.objects.create(order=order, test=test, price=test.price)
+                total += test.price
+            order.total_amount = total
+            order.save(update_fields=['total_amount'])
+            messages.success(request, f'Order {order.order_number} created successfully.')
+            return redirect('order_detail', pk=order.pk)
+        else:
+            messages.error(request, 'Please fix errors below.')
+    else:
+        form = TestOrderForm(user=request.user)
+
     return render(request, 'tests_mgmt/order_create.html', {
         'form': form,
-        'tests_qs': tests_qs,
-        'lab': lab,
-        'selected_tests': selected_tests,
+        'page_title': 'Create New Order',
     })
 
 
