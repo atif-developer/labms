@@ -47,7 +47,14 @@ class Test(models.Model):
 
 class Customer(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='customer_profile')
-    patient_id = models.CharField(max_length=20, unique=True)
+    patient_id = models.CharField(max_length=20, unique=True, blank=True)
+    laboratory = models.ForeignKey(
+        Laboratory,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='customers'
+    )
     blood_group = models.CharField(max_length=5, blank=True, choices=[
         ('A+', 'A+'), ('A-', 'A-'), ('B+', 'B+'), ('B-', 'B-'),
         ('AB+', 'AB+'), ('AB-', 'AB-'), ('O+', 'O+'), ('O-', 'O-'),
@@ -60,8 +67,14 @@ class Customer(models.Model):
     def save(self, *args, **kwargs):
         if not self.patient_id:
             last = Customer.objects.order_by('-id').first()
-            next_id = (last.id + 1) if last else 1
-            self.patient_id = f"PAT{next_id:05d}"
+            if last and last.patient_id:
+                try:
+                    num = int(last.patient_id.replace('PAT', '')) + 1
+                except ValueError:
+                    num = 1
+            else:
+                num = 1
+            self.patient_id = f'PAT{num:05d}'
         super().save(*args, **kwargs)
 
 

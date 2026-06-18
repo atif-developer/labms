@@ -147,16 +147,11 @@ def test_edit(request, pk):
 @login_required
 def customer_list(request):
     if request.user.is_admin:
-        customers = Customer.objects.select_related('user').all()
+        customers = Customer.objects.select_related('user', 'laboratory').all()
     elif request.user.is_lab_manager:
         try:
             lab = request.user.laboratory
-            customer_ids = TestOrder.objects.filter(
-                laboratory=lab
-            ).values_list('customer_id', flat=True).distinct()
-            customers = Customer.objects.filter(
-                id__in=customer_ids
-            ).select_related('user')
+            customers = Customer.objects.filter(laboratory=lab).select_related('user')
         except Exception:
             customers = Customer.objects.none()
     else:
@@ -173,7 +168,7 @@ def customer_list(request):
         )
     if gender:
         customers = customers.filter(user__gender=gender)
-    customers = customers.order_by('user__first_name', 'user__last_name')
+    customers = customers.order_by('-id')
     return render(request, 'tests_mgmt/customer_list.html', {
         'customers': customers,
         'page_title': 'Patients',
@@ -184,33 +179,49 @@ def customer_list(request):
 @login_required
 def customer_create(request):
     if not (request.user.is_admin or request.user.is_lab_manager):
+        messages.error(request, 'Access denied.')
         return redirect('dashboard')
-    form = CustomerForm(request.POST or None)
-    if request.method == 'POST' and form.is_valid():
-        # Create user
-        import random, string
-        username = f"pat_{form.cleaned_data['first_name'].lower()}{random.randint(100,999)}"
-        user = User(
-            username=username,
-            first_name=form.cleaned_data['first_name'],
-            last_name=form.cleaned_data['last_name'],
-            email=form.cleaned_data['email'],
-            phone=form.cleaned_data['phone'],
-            whatsapp_number=form.cleaned_data.get('whatsapp_number', ''),
-            gender=form.cleaned_data.get('gender', ''),
-            date_of_birth=form.cleaned_data.get('date_of_birth'),
-            address=form.cleaned_data.get('address', ''),
-            role=User.ROLE_CUSTOMER,
-        )
-        temp_password = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
-        user.set_password(temp_password)
-        user.save()
-        customer = form.save(commit=False)
-        customer.user = user
-        customer.save()
-        messages.success(request, f'Customer created. Temp password: {temp_password}')
-        return redirect('customer_detail', pk=customer.pk)
-    return render(request, 'tests_mgmt/customer_form.html', {'form': form, 'title': 'Add Customer'})
+
+    if request.method == 'POST':
+        form = CustomerForm(request.POST)
+        if form.is_valid():
+            import uuid
+            username = f"customer_{uuid.uuid4().hex[:8]}"
+            user = User.objects.create_user(
+                username=username,
+                password=uuid.uuid4().hex,
+                role=User.ROLE_CUSTOMER,
+                first_name=form.cleaned_data['first_name'],
+                last_name=form.cleaned_data['last_name'],
+                email=form.cleaned_data.get('email', ''),
+                phone=form.cleaned_data.get('phone', ''),
+                whatsapp_number=form.cleaned_data.get('whatsapp_number', ''),
+                gender=form.cleaned_data.get('gender', ''),
+                date_of_birth=form.cleaned_data.get('date_of_birth'),
+                address=form.cleaned_data.get('address', ''),
+                is_active=True,
+            )
+            customer = Customer(
+                user=user,
+                blood_group=form.cleaned_data.get('blood_group', ''),
+            )
+            if request.user.is_lab_manager:
+                try:
+                    customer.laboratory = request.user.laboratory
+                except Exception:
+                    pass
+            customer.save()
+            messages.success(request, f'Patient added. ID: {customer.patient_id}')
+            return redirect('customer_list')
+        else:
+            messages.error(request, 'Please fix errors below.')
+    else:
+        form = CustomerForm()
+
+    return render(request, 'tests_mgmt/customer_form.html', {
+        'form': form,
+        'page_title': 'Add Patient',
+    })
 
 
 @login_required
@@ -219,11 +230,7 @@ def customer_detail(request, pk):
     if request.user.is_lab_manager:
         try:
             lab = request.user.laboratory
-            has_order = TestOrder.objects.filter(
-                customer=customer,
-                laboratory=lab
-            ).exists()
-            if not has_order:
+            if customer.laboratory != lab:
                 messages.error(request, 'Access denied.')
                 return redirect('customer_list')
         except Exception:
