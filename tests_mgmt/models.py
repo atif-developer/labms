@@ -144,9 +144,9 @@ class Notification(models.Model):
         (TYPE_SMS, 'SMS'),
     ]
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='notifications')
     order = models.ForeignKey(TestOrder, on_delete=models.CASCADE, related_name='notifications', null=True, blank=True)
-    notification_type = models.CharField(max_length=20, choices=TYPE_CHOICES)
+    notification_type = models.CharField(max_length=20, choices=TYPE_CHOICES, default=TYPE_WHATSAPP)
     message = models.TextField()
     is_sent = models.BooleanField(default=False)
     sent_at = models.DateTimeField(null=True, blank=True)

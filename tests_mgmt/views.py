@@ -406,6 +406,11 @@ def upload_result(request, order_id, order_test_id):
     if request.method == 'POST' and form.is_valid():
         ot = form.save(commit=False)
         ot.save()
+        import os
+        print("TWILIO_SID:", os.environ.get('TWILIO_ACCOUNT_SID', 'MISSING'))
+        print("TWILIO_TOKEN:", "SET" if os.environ.get('TWILIO_AUTH_TOKEN') else 'MISSING')
+        print("TWILIO_FROM:", os.environ.get('TWILIO_WHATSAPP_FROM', 'MISSING'))
+        print("SITE_URL:", os.environ.get('SITE_URL', 'MISSING'))
         # Check if all results done → complete order & notify
         if check_all_results_uploaded(order):
             order.status = TestOrder.STATUS_COMPLETED
@@ -428,7 +433,6 @@ def upload_result(request, order_id, order_test_id):
     })
 
 
-@login_required
 @login_required
 def resend_whatsapp(request, pk):
     if not (request.user.is_admin or request.user.is_lab_manager):
@@ -467,6 +471,13 @@ def download_result(request, order_id, order_test_id):
 @login_required
 def notification_log(request):
     if not request.user.is_admin:
+        messages.error(request, 'Access denied.')
         return redirect('dashboard')
-    notifications = Notification.objects.select_related('user', 'order').order_by('-created_at')
-    return render(request, 'tests_mgmt/notification_log.html', {'notifications': notifications})
+    notifications = Notification.objects.select_related(
+        'order__customer__user',
+        'order__laboratory'
+    ).order_by('-created_at')
+    return render(request, 'tests_mgmt/notification_log.html', {
+        'notifications': notifications,
+        'page_title': 'Notification Log',
+    })

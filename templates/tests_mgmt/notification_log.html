@@ -1,34 +1,83 @@
 {% extends 'base.html' %}
-{% block title %}Notification Log - LabMS{% endblock %}
+{% block title %}Notification Log | LabMS{% endblock %}
 {% block page_title %}Notification Log{% endblock %}
+
 {% block content %}
-<h5 class="fw-bold mb-3">WhatsApp Notification Log</h5>
-<div class="card">
-  <div class="table-responsive">
-    <table class="table table-hover align-middle mb-0">
-      <thead class="table-light"><tr><th>User</th><th>Order</th><th>Type</th><th>Message</th><th>Status</th><th>Sent At</th></tr></thead>
-      <tbody>
-        {% for n in notifications %}
-        <tr>
-          <td>{{ n.user.get_full_name|default:n.user.username }}</td>
-          <td>{% if n.order %}<code>{{ n.order.order_number }}</code>{% else %}-{% endif %}</td>
-          <td><span class="badge bg-success"><i class="bi bi-whatsapp me-1"></i>{{ n.get_notification_type_display }}</span></td>
-          <td><small class="text-muted" style="max-width:300px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ n.message }}</small></td>
-          <td>
-            {% if n.is_sent %}
-            <span class="badge bg-success"><i class="bi bi-check me-1"></i>Sent</span>
-            {% else %}
-            <span class="badge bg-danger" title="{{ n.error_message }}"><i class="bi bi-x me-1"></i>Failed</span>
-            {% if n.error_message %}<div class="text-danger small mt-1">{{ n.error_message|truncatechars:60 }}</div>{% endif %}
-            {% endif %}
-          </td>
-          <td><small>{% if n.sent_at %}{{ n.sent_at|date:"d M Y H:i" }}{% else %}-{% endif %}</small></td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="6" class="text-center text-muted py-4">No notifications sent yet.</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
+<div class="container-fluid px-4">
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h4 class="fw-bold mb-1">Notification Log</h4>
+      <p class="text-muted mb-0">WhatsApp notification history</p>
+    </div>
   </div>
+
+  <div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th class="px-4 py-3">Order</th>
+              <th class="px-4 py-3">Patient</th>
+              <th class="px-4 py-3">Laboratory</th>
+              <th class="px-4 py-3">Message</th>
+              <th class="px-4 py-3">Status</th>
+              <th class="px-4 py-3">Date & Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for notification in notifications %}
+            <tr>
+              <td class="px-4 py-3">
+                {% if notification.order %}
+                <a href="{% url 'order_detail' notification.order.pk %}"
+                   class="text-primary fw-semibold font-monospace">
+                  {{ notification.order.order_number }}
+                </a>
+                {% else %}-{% endif %}
+              </td>
+              <td class="px-4 py-3">
+                {% if notification.order %}
+                  {{ notification.order.customer.user.get_full_name }}
+                {% else %}-{% endif %}
+              </td>
+              <td class="px-4 py-3">
+                {% if notification.order %}
+                  {{ notification.order.laboratory.name }}
+                {% else %}-{% endif %}
+              </td>
+              <td class="px-4 py-3 text-muted small">
+                {{ notification.message }}
+              </td>
+              <td class="px-4 py-3">
+                {% if notification.is_sent %}
+                  <span class="badge bg-success">
+                    <i class="bi bi-check-circle me-1"></i>Sent
+                  </span>
+                {% else %}
+                  <span class="badge bg-danger">
+                    <i class="bi bi-x-circle me-1"></i>Failed
+                  </span>
+                {% endif %}
+              </td>
+              <td class="px-4 py-3 text-muted small font-monospace">
+                {{ notification.created_at|date:"d M Y, h:i A" }}
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="6" class="text-center py-5">
+                <i class="bi bi-bell-slash fs-1 text-muted d-block mb-3"></i>
+                <p class="text-muted">No notifications sent yet.</p>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
 </div>
 {% endblock %}
