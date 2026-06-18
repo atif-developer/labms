@@ -57,32 +57,58 @@ class TestForm(forms.ModelForm):
 
 
 class CustomerForm(forms.ModelForm):
-    first_name = forms.CharField(max_length=100, required=True)
-    last_name = forms.CharField(max_length=100, required=True)
-    email = forms.EmailField(required=True)
-    phone = forms.CharField(max_length=20, required=True)
-    whatsapp_number = forms.CharField(max_length=20, required=False, 
-                                      help_text='With country code e.g. +923001234567')
-    gender = forms.ChoiceField(choices=[('', '-- Select --'), ('M', 'Male'), ('F', 'Female'), ('O', 'Other')])
-    date_of_birth = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}), required=False)
-    address = forms.CharField(widget=forms.Textarea(attrs={'rows': 2}), required=False)
+    first_name = forms.CharField(required=True)
+    last_name = forms.CharField(required=True)
+    email = forms.EmailField(required=False)
+    phone = forms.CharField(required=False)
+    whatsapp_number = forms.CharField(required=False)
+    gender = forms.ChoiceField(
+        choices=[('', '-- Select --'), ('M', 'Male'), ('F', 'Female'), ('O', 'Other')],
+        required=False
+    )
+    date_of_birth = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date'})
+    )
+    address = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={'rows': 3})
+    )
 
     class Meta:
         model = Customer
         fields = ['blood_group']
 
     def __init__(self, *args, **kwargs):
-        self.instance_user = kwargs.pop('user_instance', None)
+        kwargs.pop('user_instance', None)  # accept but ignore legacy kwarg
         super().__init__(*args, **kwargs)
-        if self.instance_user:
-            self.fields['first_name'].initial = self.instance_user.first_name
-            self.fields['last_name'].initial = self.instance_user.last_name
-            self.fields['email'].initial = self.instance_user.email
-            self.fields['phone'].initial = self.instance_user.phone
-            self.fields['whatsapp_number'].initial = self.instance_user.whatsapp_number
-            self.fields['gender'].initial = self.instance_user.gender
-            self.fields['date_of_birth'].initial = self.instance_user.date_of_birth
-            self.fields['address'].initial = self.instance_user.address
+        if self.instance and self.instance.pk:
+            user = self.instance.user
+            self.fields['first_name'].initial = user.first_name
+            self.fields['last_name'].initial = user.last_name
+            self.fields['email'].initial = user.email
+            self.fields['phone'].initial = user.phone
+            self.fields['whatsapp_number'].initial = user.whatsapp_number
+            self.fields['gender'].initial = user.gender
+            self.fields['date_of_birth'].initial = user.date_of_birth
+            self.fields['address'].initial = user.address
+
+    def save(self, commit=True):
+        customer = super().save(commit=False)
+        if customer.pk:
+            user = customer.user
+            user.first_name = self.cleaned_data['first_name']
+            user.last_name = self.cleaned_data['last_name']
+            user.email = self.cleaned_data.get('email', '')
+            user.phone = self.cleaned_data.get('phone', '')
+            user.whatsapp_number = self.cleaned_data.get('whatsapp_number', '')
+            user.gender = self.cleaned_data.get('gender', '')
+            user.date_of_birth = self.cleaned_data.get('date_of_birth')
+            user.address = self.cleaned_data.get('address', '')
+            if commit:
+                user.save()
+                customer.save()
+        return customer
 
 
 class TestOrderForm(forms.ModelForm):

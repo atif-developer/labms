@@ -20,6 +20,7 @@ urlpatterns = [
     path('orders/create/', views.order_create, name='order_create'),
     path('orders/<int:pk>/', views.order_detail, name='order_detail'),
     path('orders/<int:pk>/status/', views.order_update_status, name='order_update_status'),
+    path('orders/<int:pk>/resend-whatsapp/', views.resend_whatsapp, name='resend_whatsapp'),
     path('orders/<int:order_id>/results/<int:order_test_id>/upload/', views.upload_result, name='upload_result'),
     path('orders/<int:order_id>/results/<int:order_test_id>/download/', views.download_result, name='download_result'),
     # Notifications

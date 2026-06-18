@@ -242,19 +242,8 @@ def customer_edit(request, pk):
     if not (request.user.is_admin or request.user.is_lab_manager):
         return redirect('dashboard')
     customer = get_object_or_404(Customer, pk=pk)
-    form = CustomerForm(request.POST or None, instance=customer, user_instance=customer.user)
+    form = CustomerForm(request.POST or None, instance=customer)
     if request.method == 'POST' and form.is_valid():
-        # Update user fields
-        u = customer.user
-        u.first_name = form.cleaned_data['first_name']
-        u.last_name = form.cleaned_data['last_name']
-        u.email = form.cleaned_data['email']
-        u.phone = form.cleaned_data['phone']
-        u.whatsapp_number = form.cleaned_data.get('whatsapp_number', '')
-        u.gender = form.cleaned_data.get('gender', '')
-        u.date_of_birth = form.cleaned_data.get('date_of_birth')
-        u.address = form.cleaned_data.get('address', '')
-        u.save()
         form.save()
         messages.success(request, 'Customer updated.')
         return redirect('customer_detail', pk=pk)
@@ -367,7 +356,12 @@ def order_detail(request, pk):
         except Exception:
             return redirect('order_list')
     order_tests = order.order_tests.select_related('test').all()
-    return render(request, 'tests_mgmt/order_detail.html', {'order': order, 'order_tests': order_tests})
+    return render(request, 'tests_mgmt/order_detail.html', {
+        'order': order,
+        'order_tests': order_tests,
+        'status_choices': TestOrder.STATUS_CHOICES,
+        'page_title': f'Order {order.order_number}',
+    })
 
 
 @login_required
@@ -418,6 +412,24 @@ def upload_result(request, order_id, order_test_id):
     return render(request, 'tests_mgmt/upload_result.html', {
         'form': form, 'order': order, 'order_test': order_test
     })
+
+
+@login_required
+@login_required
+def resend_whatsapp(request, pk):
+    if not (request.user.is_admin or request.user.is_lab_manager):
+        messages.error(request, 'Access denied.')
+        return redirect('dashboard')
+    order = get_object_or_404(TestOrder, pk=pk)
+    if request.method == 'POST':
+        order.whatsapp_notified = False
+        order.save(update_fields=['whatsapp_notified'])
+        sent = notify_result_ready(order)
+        if sent:
+            messages.success(request, 'WhatsApp notification resent successfully!')
+        else:
+            messages.error(request, 'Failed to resend WhatsApp. Check customer WhatsApp number.')
+    return redirect('order_detail', pk=pk)
 
 
 @login_required

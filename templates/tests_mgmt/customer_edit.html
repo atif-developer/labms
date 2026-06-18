@@ -73,6 +73,19 @@
               </div>
 
               <div class="col-md-6">
+                <label class="form-label fw-semibold">
+                  <i class="bi bi-whatsapp me-1 text-success"></i>WhatsApp Number
+                </label>
+                <input type="text" name="whatsapp_number"
+                  value="{{ form.whatsapp_number.value|default:'' }}"
+                  placeholder="+923001234567"
+                  class="form-control {% if form.whatsapp_number.errors %}is-invalid{% endif %}">
+                {% if form.whatsapp_number.errors %}
+                <div class="invalid-feedback">{{ form.whatsapp_number.errors.0 }}</div>
+                {% endif %}
+              </div>
+
+              <div class="col-md-6">
                 <label class="form-label fw-semibold">Gender</label>
                 <select name="gender" class="form-select">
                   <option value="">-- Select Gender --</option>
