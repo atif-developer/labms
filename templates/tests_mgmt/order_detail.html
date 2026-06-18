@@ -51,27 +51,6 @@
       </form>
     </div>
 
-    <!-- WhatsApp Notification -->
-    <div class="card p-3">
-      <h6 class="fw-bold mb-2"><i class="bi bi-whatsapp text-success me-2"></i>WhatsApp</h6>
-      <div class="mb-2">
-        {% if order.whatsapp_notified %}
-        <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Sent</span>
-        <div class="text-muted small mt-1">Customer notified via WhatsApp.</div>
-        {% else %}
-        <span class="badge bg-warning text-dark"><i class="bi bi-clock me-1"></i>Not Sent</span>
-        <div class="text-muted small mt-1">Auto-sends when all results uploaded.</div>
-        {% endif %}
-      </div>
-      <form method="post" action="{% url 'resend_whatsapp' order.pk %}">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-outline-success btn-sm w-100"
-          onclick="return confirm('Send WhatsApp notification to customer?')">
-          <i class="bi bi-whatsapp me-1"></i>
-          {% if order.whatsapp_notified %}Resend{% else %}Send Now{% endif %}
-        </button>
-      </form>
-    </div>
     {% endif %}
   </div>
 
@@ -99,16 +78,25 @@
             </div>
           </div>
 
-          <div class="mt-2 d-flex gap-2">
+          <div class="mt-2 d-flex gap-2 flex-wrap">
             {% if user.is_admin or user.is_lab_manager %}
             <a href="{% url 'upload_result' order.pk ot.pk %}" class="btn btn-sm {% if ot.result_file %}btn-outline-warning{% else %}btn-outline-primary{% endif %}">
               <i class="bi bi-upload me-1"></i>{% if ot.result_file %}Update{% else %}Upload{% endif %} Result
             </a>
             {% endif %}
             {% if ot.result_file %}
-            <a href="{% url 'download_result' order.pk ot.pk %}" class="btn btn-sm btn-outline-success">
+            <a href="{% url 'download_result' order.pk ot.pk %}" class="btn btn-sm btn-outline-secondary">
               <i class="bi bi-download me-1"></i>Download
             </a>
+            {% if user.is_admin or user.is_lab_manager %}
+            <form method="post" action="{% url 'resend_whatsapp' order.pk %}" class="d-inline">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-outline-success"
+                onclick="return confirm('Send WhatsApp notification to customer?')">
+                <i class="bi bi-whatsapp me-1"></i>{% if order.whatsapp_notified %}Resend{% else %}Send{% endif %}
+              </button>
+            </form>
+            {% endif %}
             {% endif %}
           </div>
         </div>
