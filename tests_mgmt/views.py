@@ -151,7 +151,12 @@ def customer_list(request):
     elif request.user.is_lab_manager:
         try:
             lab = request.user.laboratory
-            customers = Customer.objects.filter(laboratory=lab).select_related('user')
+            customer_ids_from_orders = TestOrder.objects.filter(
+                laboratory=lab
+            ).values_list('customer_id', flat=True).distinct()
+            customers = Customer.objects.filter(
+                Q(laboratory=lab) | Q(id__in=customer_ids_from_orders)
+            ).select_related('user').distinct()
         except Exception:
             customers = Customer.objects.none()
     else:
