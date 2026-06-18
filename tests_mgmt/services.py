@@ -1,78 +1,66 @@
-"""
-Service layer for WhatsApp notifications and business logic.
-"""
+from twilio.rest import Client
 from django.conf import settings
-from django.utils import timezone
-from .models import Notification
+import json
 
 
-def send_whatsapp_notification(user, order, message):
-    """Send WhatsApp notification via Twilio."""
-    notification = Notification.objects.create(
-        user=user,
-        order=order,
-        notification_type=Notification.TYPE_WHATSAPP,
-        message=message,
-    )
-
-    if not user.whatsapp_number:
-        notification.error_message = "No WhatsApp number on file."
-        notification.save()
-        return False
-
+def send_whatsapp_notification(to_number, pdf_url):
     try:
-        from twilio.rest import Client
-        client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
-        to_number = f"whatsapp:{user.whatsapp_number}"
-        msg = client.messages.create(
-            body=message,
-            from_=settings.TWILIO_WHATSAPP_FROM,
-            to=to_number,
+        client = Client(
+            settings.TWILIO_ACCOUNT_SID,
+            settings.TWILIO_AUTH_TOKEN
         )
-        notification.is_sent = True
-        notification.sent_at = timezone.now()
-        notification.save()
-        return True
+        message = client.messages.create(
+            from_=settings.TWILIO_WHATSAPP_FROM,
+            to=f"whatsapp:{to_number}",
+            content_sid="HXec23e7e9959fe0e7b00353256b9f6831",
+            content_variables=json.dumps({
+                "1": pdf_url
+            }),
+        )
+        return True, message.sid
     except Exception as e:
-        notification.error_message = str(e)
-        notification.save()
-        return False
+        print(f"WhatsApp error: {e}")
+        return False, str(e)
 
 
 def notify_result_ready(order):
-    """Notify customer that test results are ready."""
-    customer = order.customer
-    user = customer.user
-    site_url = settings.SITE_URL
+    try:
+        customer = order.customer
+        to_number = customer.user.whatsapp_number or customer.user.phone
+        if not to_number:
+            return False
 
-    message = (
-        f"*Lab Results Ready* ✅\n\n"
-        f"Dear {user.get_full_name()},\n\n"
-        f"Your test results for Order *{order.order_number}* are now available.\n\n"
-        f"🔬 Laboratory: {order.laboratory.name}\n"
-        f"📋 Patient ID: {customer.patient_id}\n\n"
-        f"You can download your results by visiting:\n"
-        f"{site_url}/orders/{order.id}/results/\n\n"
-        f"For queries, contact the lab at: {order.laboratory.phone}\n\n"
-        f"_This is an automated message. Please do not reply._"
-    )
+        pdf_url = f"{settings.SITE_URL}/tests/orders/{order.pk}/download-result/"
 
-    return send_whatsapp_notification(user, order, message)
+        success, result = send_whatsapp_notification(to_number, pdf_url)
+
+        if success:
+            order.whatsapp_notified = True
+            order.save(update_fields=['whatsapp_notified'])
+
+            from .models import Notification
+            Notification.objects.create(
+                order=order,
+                user=customer.user,
+                notification_type=Notification.TYPE_WHATSAPP,
+                message=f"WhatsApp sent to {to_number}",
+                is_sent=True
+            )
+        return success
+    except Exception as e:
+        print(f"notify_result_ready error: {e}")
+        return False
+
+
+def check_all_results_uploaded(order):
+    order_tests = order.order_tests.all()
+    if not order_tests.exists():
+        return False
+    return all(ot.result_file for ot in order_tests)
 
 
 def calculate_order_total(order):
-    """Calculate and update order total."""
     total = sum(ot.price for ot in order.order_tests.all())
     order.total_amount = total
     order.save(update_fields=['total_amount'])
     return total
-
-
-def check_all_results_uploaded(order):
-    """Check if all tests in an order have results uploaded."""
-    order_tests = order.order_tests.all()
-    if not order_tests.exists():
-        return False
-    return all(
-        ot.result_file for ot in order_tests
-    )
