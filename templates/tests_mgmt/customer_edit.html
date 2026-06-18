@@ -107,11 +107,34 @@
                   class="form-control">
               </div>
 
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">
+                  <i class="bi bi-droplet me-1 text-danger"></i>Blood Group
+                </label>
+                <select name="blood_group"
+                  class="form-select {% if form.blood_group.errors %}is-invalid{% endif %}">
+                  {% for value, label in form.blood_group.field.choices %}
+                  <option value="{{ value }}"
+                    {% if form.blood_group.value == value %}selected{% endif %}>
+                    {{ label }}
+                  </option>
+                  {% endfor %}
+                </select>
+                {% if form.blood_group.errors %}
+                <div class="invalid-feedback">{{ form.blood_group.errors.0 }}</div>
+                {% endif %}
+              </div>
+
               <div class="col-12">
-                <label class="form-label fw-semibold">Address</label>
+                <label class="form-label fw-semibold">
+                  <i class="bi bi-geo-alt me-1"></i>Address
+                </label>
                 <textarea name="address" rows="3"
-                  class="form-control"
+                  class="form-control {% if form.address.errors %}is-invalid{% endif %}"
                   placeholder="Enter patient address...">{{ form.address.value|default:customer.user.address }}</textarea>
+                {% if form.address.errors %}
+                <div class="invalid-feedback">{{ form.address.errors.0 }}</div>
+                {% endif %}
               </div>
 
             </div>

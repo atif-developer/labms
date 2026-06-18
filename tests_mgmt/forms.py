@@ -74,6 +74,16 @@ class CustomerForm(forms.ModelForm):
         required=False,
         widget=forms.Textarea(attrs={'rows': 3})
     )
+    blood_group = forms.ChoiceField(
+        choices=[
+            ('', '-- Select Blood Group --'),
+            ('A+', 'A+'), ('A-', 'A-'),
+            ('B+', 'B+'), ('B-', 'B-'),
+            ('AB+', 'AB+'), ('AB-', 'AB-'),
+            ('O+', 'O+'), ('O-', 'O-'),
+        ],
+        required=False
+    )
 
     class Meta:
         model = Customer
@@ -92,6 +102,7 @@ class CustomerForm(forms.ModelForm):
             self.fields['gender'].initial = user.gender
             self.fields['date_of_birth'].initial = user.date_of_birth
             self.fields['address'].initial = user.address
+            self.fields['blood_group'].initial = self.instance.blood_group
 
     def save(self, commit=True):
         customer = super().save(commit=False)
@@ -107,6 +118,8 @@ class CustomerForm(forms.ModelForm):
             user.address = self.cleaned_data.get('address', '')
             if commit:
                 user.save()
+            customer.blood_group = self.cleaned_data.get('blood_group', '')
+            if commit:
                 customer.save()
         return customer
 
