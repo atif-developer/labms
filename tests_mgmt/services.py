@@ -39,7 +39,11 @@ def notify_result_ready(order):
             print(f"ERROR: No WhatsApp/phone number for {user.get_full_name()}")
             return False
 
-        to_number = to_number.strip().replace(' ', '')
+        to_number = to_number.strip().replace(' ', '').replace('-', '')
+        if to_number.startswith('0'):
+            to_number = '+92' + to_number[1:]
+        if not to_number.startswith('+'):
+            to_number = '+' + to_number
 
         site_url = settings.SITE_URL.rstrip('/')
         pdf_url = f"{site_url}/tests/orders/{order.pk}/download-result/"
