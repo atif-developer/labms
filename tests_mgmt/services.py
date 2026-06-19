@@ -37,7 +37,11 @@ def notify_result_ready(order):
             to_number = '+' + to_number
 
         site_url = settings.SITE_URL.rstrip('/')
-        pdf_url = f"{site_url}/tests/orders/{order.pk}/download-result/"
+        first_result = order.order_tests.filter(result_file__isnull=False).exclude(result_file='').first()
+        if not first_result:
+            print(f"ERROR: No result files found for order {order.order_number}")
+            return False
+        pdf_url = f"{site_url}/tests/results/{first_result.pk}/download/"
 
         print(f"Sending WhatsApp to: {to_number}")
         print(f"PDF URL: {pdf_url}")

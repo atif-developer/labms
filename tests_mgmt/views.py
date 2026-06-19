@@ -450,22 +450,11 @@ def resend_whatsapp(request, pk):
     return redirect('order_detail', pk=pk)
 
 
-@login_required
-def download_result(request, order_id, order_test_id):
-    order = get_object_or_404(TestOrder, pk=order_id)
-    user = request.user
-    # Access control
-    if user.is_customer:
-        try:
-            if order.customer.user != user:
-                raise Http404
-        except Exception:
-            raise Http404
-    order_test = get_object_or_404(OrderTest, pk=order_test_id, order=order)
+def download_result(request, pk):
+    order_test = get_object_or_404(OrderTest, pk=pk)
     if not order_test.result_file:
-        messages.error(request, 'No result file available.')
-        return redirect('order_detail', pk=order_id)
-    return FileResponse(order_test.result_file.open(), as_attachment=True)
+        raise Http404("Result not yet available.")
+    return redirect(order_test.result_file.url)
 
 
 @login_required
