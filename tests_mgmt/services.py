@@ -1,26 +1,17 @@
 from twilio.rest import Client
 from django.conf import settings
-import json
 
 
 def send_whatsapp_notification(to_number, pdf_url):
     try:
-        account_sid = settings.TWILIO_ACCOUNT_SID
-        auth_token = settings.TWILIO_AUTH_TOKEN
-        from_number = settings.TWILIO_WHATSAPP_FROM
-
-        if not account_sid or not auth_token:
-            print("ERROR: Twilio credentials missing!")
-            return False
-
-        client = Client(account_sid, auth_token)
+        client = Client(
+            settings.TWILIO_ACCOUNT_SID,
+            settings.TWILIO_AUTH_TOKEN
+        )
         message = client.messages.create(
-            from_=from_number,
+            from_=settings.TWILIO_WHATSAPP_FROM,
             to=f"whatsapp:{to_number}",
-            content_sid="HXec23e7e9959fe0e7b00353256b9f6831",
-            content_variables=json.dumps({
-                "1": pdf_url
-            }),
+            body=f"Your lab test results are ready! Download your report here: {pdf_url}"
         )
         print(f"WhatsApp sent! SID: {message.sid}")
         return True
