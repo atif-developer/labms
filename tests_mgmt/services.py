@@ -2,7 +2,7 @@ from twilio.rest import Client
 from django.conf import settings
 
 
-def send_whatsapp_notification(to_number, pdf_url):
+def send_whatsapp_notification(to_number, message_body):
     try:
         client = Client(
             settings.TWILIO_ACCOUNT_SID,
@@ -11,7 +11,7 @@ def send_whatsapp_notification(to_number, pdf_url):
         message = client.messages.create(
             from_=settings.TWILIO_WHATSAPP_FROM,
             to=f"whatsapp:{to_number}",
-            body=f"Your lab test results are ready! Download your report here: {pdf_url}"
+            body=message_body
         )
         print(f"WhatsApp sent! SID: {message.sid}")
         return True
@@ -27,7 +27,7 @@ def notify_result_ready(order):
 
         to_number = user.whatsapp_number or user.phone
         if not to_number:
-            print(f"ERROR: No WhatsApp/phone number for {user.get_full_name()}")
+            print(f"ERROR: No number for {user.get_full_name()}")
             return False
 
         to_number = to_number.strip().replace(' ', '').replace('-', '')
@@ -43,16 +43,36 @@ def notify_result_ready(order):
             return False
         pdf_url = f"{site_url}/tests/results/{first_result.pk}/download/"
 
-        print(f"Sending WhatsApp to: {to_number}")
-        print(f"PDF URL: {pdf_url}")
+        try:
+            lab_phone = order.laboratory.phone or 'N/A'
+            lab_name = order.laboratory.name
+        except Exception:
+            lab_phone = 'N/A'
+            lab_name = 'Lab'
 
-        success = send_whatsapp_notification(to_number, pdf_url)
+        message_body = f"""*Lab Results Ready* ✅
+
+Dear {user.get_full_name()},
+
+Your test results for Order *{order.order_number}* are now available.
+
+🔬 Laboratory: {lab_name}
+📋 Patient ID: {customer.patient_id}
+
+You can download your results by visiting:
+{pdf_url}
+
+For queries, contact the lab at: {lab_phone}
+
+_This is an automated message. Please do not reply._"""
+
+        print(f"Sending WhatsApp to: {to_number}")
+        success = send_whatsapp_notification(to_number, message_body)
 
         from .models import Notification
         Notification.objects.create(
             order=order,
-            user=user,
-            message=f"WhatsApp {'sent' if success else 'FAILED'} to {to_number}. PDF: {pdf_url}",
+            message=f"WhatsApp {'sent' if success else 'FAILED'} to {to_number}.",
             is_sent=success
         )
 
