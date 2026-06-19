@@ -1,37 +1,191 @@
 {% extends 'base.html' %}
-{% load crispy_forms_tags %}
-{% block title %}{{ title }} - LabMS{% endblock %}
-{% block page_title %}{{ title }}{% endblock %}
+{% load static %}
+{% block title %}Add New Patient | LabMS{% endblock %}
+{% block page_title %}Add New Patient{% endblock %}
+
 {% block content %}
-<div class="card p-4" style="max-width:700px;">
-  <h5 class="fw-bold mb-3">{{ title }}</h5>
-  <form method="post" novalidate>
-    {% csrf_token %}
-    <h6 class="fw-semibold border-bottom pb-2 mb-3">Personal Information</h6>
-    {% for field in form %}
-      {% if field.html_name in 'first_name,last_name,email,phone,whatsapp_number,gender,date_of_birth,address' %}
-      <div class="mb-3">
-        <label class="form-label fw-semibold">{{ field.label }}</label>
-        {{ field }}
-        {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
-        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
-      </div>
-      {% endif %}
-    {% endfor %}
-    <h6 class="fw-semibold border-bottom pb-2 mb-3 mt-4">Medical Information</h6>
-    {% for field in form %}
-      {% if field.html_name not in 'first_name,last_name,email,phone,whatsapp_number,gender,date_of_birth,address' %}
-      <div class="mb-3">
-        <label class="form-label fw-semibold">{{ field.label }}</label>
-        {{ field }}
-        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
-      </div>
-      {% endif %}
-    {% endfor %}
-    <div class="d-flex gap-2 mt-3">
-      <button class="btn btn-primary">Save Patient</button>
-      <a href="{% url 'customer_list' %}" class="btn btn-outline-secondary">Cancel</a>
+<div class="container-fluid px-4">
+
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h4 class="fw-bold mb-1">Add New Patient</h4>
+      <p class="text-muted mb-0">Fill in patient details to register a new patient.</p>
     </div>
-  </form>
+    <a href="{% url 'customer_list' %}" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left me-1"></i>Back to Patients
+    </a>
+  </div>
+
+  <div class="row justify-content-center">
+    <div class="col-lg-9">
+      <form method="post" novalidate>
+        {% csrf_token %}
+
+        <!-- Personal Information Card -->
+        <div class="card shadow-sm border-0 mb-4">
+          <div class="card-header bg-white border-bottom py-3">
+            <h6 class="fw-semibold mb-0 text-primary">
+              <i class="bi bi-person-fill me-2"></i>Personal Information
+            </h6>
+          </div>
+          <div class="card-body p-4">
+            <div class="row g-3">
+
+              <!-- First Name -->
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">
+                  First Name <span class="text-danger">*</span>
+                </label>
+                <input type="text" name="first_name"
+                  value="{{ form.first_name.value|default:'' }}"
+                  placeholder="Enter first name"
+                  class="form-control {% if form.first_name.errors %}is-invalid{% endif %}">
+                {% if form.first_name.errors %}
+                <div class="invalid-feedback">{{ form.first_name.errors.0 }}</div>
+                {% endif %}
+              </div>
+
+              <!-- Last Name -->
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">
+                  Last Name <span class="text-danger">*</span>
+                </label>
+                <input type="text" name="last_name"
+                  value="{{ form.last_name.value|default:'' }}"
+                  placeholder="Enter last name"
+                  class="form-control {% if form.last_name.errors %}is-invalid{% endif %}">
+                {% if form.last_name.errors %}
+                <div class="invalid-feedback">{{ form.last_name.errors.0 }}</div>
+                {% endif %}
+              </div>
+
+              <!-- Gender -->
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Gender</label>
+                <select name="gender" class="form-select">
+                  <option value="">-- Select Gender --</option>
+                  <option value="M" {% if form.gender.value == "M" %}selected{% endif %}>Male</option>
+                  <option value="F" {% if form.gender.value == "F" %}selected{% endif %}>Female</option>
+                  <option value="O" {% if form.gender.value == "O" %}selected{% endif %}>Other</option>
+                </select>
+              </div>
+
+              <!-- Date of Birth -->
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Date of Birth</label>
+                <input type="date" name="date_of_birth"
+                  value="{{ form.date_of_birth.value|default:'' }}"
+                  class="form-control">
+              </div>
+
+              <!-- Blood Group -->
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">
+                  <i class="bi bi-droplet-fill text-danger me-1"></i>Blood Group
+                </label>
+                <select name="blood_group" class="form-select">
+                  <option value="">-- Select Blood Group --</option>
+                  <option value="A+" {% if form.blood_group.value == "A+" %}selected{% endif %}>A+</option>
+                  <option value="A-" {% if form.blood_group.value == "A-" %}selected{% endif %}>A-</option>
+                  <option value="B+" {% if form.blood_group.value == "B+" %}selected{% endif %}>B+</option>
+                  <option value="B-" {% if form.blood_group.value == "B-" %}selected{% endif %}>B-</option>
+                  <option value="AB+" {% if form.blood_group.value == "AB+" %}selected{% endif %}>AB+</option>
+                  <option value="AB-" {% if form.blood_group.value == "AB-" %}selected{% endif %}>AB-</option>
+                  <option value="O+" {% if form.blood_group.value == "O+" %}selected{% endif %}>O+</option>
+                  <option value="O-" {% if form.blood_group.value == "O-" %}selected{% endif %}>O-</option>
+                </select>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- Contact Information Card -->
+        <div class="card shadow-sm border-0 mb-4">
+          <div class="card-header bg-white border-bottom py-3">
+            <h6 class="fw-semibold mb-0 text-primary">
+              <i class="bi bi-telephone-fill me-2"></i>Contact Information
+            </h6>
+          </div>
+          <div class="card-body p-4">
+            <div class="row g-3">
+
+              <!-- Email -->
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Email</label>
+                <div class="input-group">
+                  <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                  <input type="email" name="email"
+                    value="{{ form.email.value|default:'' }}"
+                    placeholder="patient@email.com"
+                    class="form-control {% if form.email.errors %}is-invalid{% endif %}">
+                  {% if form.email.errors %}
+                  <div class="invalid-feedback">{{ form.email.errors.0 }}</div>
+                  {% endif %}
+                </div>
+              </div>
+
+              <!-- Phone -->
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Phone</label>
+                <div class="input-group">
+                  <span class="input-group-text"><i class="bi bi-telephone"></i></span>
+                  <input type="text" name="phone"
+                    value="{{ form.phone.value|default:'' }}"
+                    placeholder="+923001234567"
+                    class="form-control {% if form.phone.errors %}is-invalid{% endif %}">
+                  {% if form.phone.errors %}
+                  <div class="invalid-feedback">{{ form.phone.errors.0 }}</div>
+                  {% endif %}
+                </div>
+              </div>
+
+              <!-- WhatsApp -->
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">
+                  <i class="bi bi-whatsapp text-success me-1"></i>WhatsApp Number
+                </label>
+                <div class="input-group">
+                  <span class="input-group-text text-success"><i class="bi bi-whatsapp"></i></span>
+                  <input type="text" name="whatsapp_number"
+                    value="{{ form.whatsapp_number.value|default:'' }}"
+                    placeholder="+923001234567"
+                    class="form-control {% if form.whatsapp_number.errors %}is-invalid{% endif %}">
+                  {% if form.whatsapp_number.errors %}
+                  <div class="invalid-feedback">{{ form.whatsapp_number.errors.0 }}</div>
+                  {% endif %}
+                </div>
+                <div class="form-text">
+                  <i class="bi bi-info-circle me-1"></i>Results will be sent to this WhatsApp number.
+                </div>
+              </div>
+
+              <!-- Address -->
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Address</label>
+                <textarea name="address" rows="3"
+                  class="form-control"
+                  placeholder="Enter patient address...">{{ form.address.value|default:'' }}</textarea>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="d-flex gap-2 justify-content-end mb-4">
+          <a href="{% url 'customer_list' %}" class="btn btn-outline-secondary px-4">
+            <i class="bi bi-x me-1"></i>Cancel
+          </a>
+          <button type="submit" class="btn btn-primary px-4">
+            <i class="bi bi-person-plus me-1"></i>Add Patient
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
 </div>
 {% endblock %}
